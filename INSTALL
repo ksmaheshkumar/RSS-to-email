@@ -1,0 +1,4 @@
+Copy config-example.json fo config.json and feeds-example.json to feeds.json.
+(These are JSON files.)
+Modify them.
+Run fetch.py (for example, by cron).

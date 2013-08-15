@@ -1,29 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
-import email
-import os
-import binascii
-import hashlib
-import time
-import feedparser
-import re
-import random
-import datetime
-import xmlrpclib
-import smtplib
+import sys, email, os, pickle, binascii, hashlib, time, feedparser, re, random, datetime
+import xmlrpclib, smtplib, json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 VERBOSITY_LEVEL=0
 
-FROMADDR = "from@domain"
-PASSWORD = "PASSWORD"
-SMTP_HOST = "127.0.0.1"
-MAIL_RCPT = "recepient@domain"
-
-LOGIN    = FROMADDR
+base={}
 
 def send_email (subj, _from, DATE, to, text_part, html_part):
     msg = MIMEMultipart('alternative')
@@ -38,13 +23,17 @@ def send_email (subj, _from, DATE, to, text_part, html_part):
     msg.attach(part1)
     msg.attach(part2)
 
-    #server = smtplib.SMTP(SMTP_HOST, 587)
-    server = smtplib.SMTP(SMTP_HOST, 25)
+    if config["MAILSERVER_TLS"]:
+        server = smtplib.SMTP(config["SMTP_HOST"], 587)
+    else:
+        server = smtplib.SMTP(config["SMTP_HOST"], 25)
     #server.set_debuglevel(1)
     server.ehlo()
-    #server.starttls()
-    #server.login(LOGIN, PASSWORD)
-    server.sendmail(FROMADDR, [MAIL_RCPT], msg.as_string())
+    if config["MAILSERVER_TLS"]:
+        server.starttls()
+    if config["LOCAL_MAILSERVER"]==False and config["PASSWORD"]!="":
+        server.login(LOGIN, config["PASSWORD"])
+    server.sendmail(config["FROMADDR"], [config["MAIL_RCPT"]], msg.as_string())
     server.quit()
 
 def email_post (site_type, user, post_date, post_title, post_summary, post_URL):
@@ -59,30 +48,27 @@ def email_post (site_type, user, post_date, post_title, post_summary, post_URL):
     #print "post_title=["+post_title.replace("\n", "\\n")+"]"
     if post_title==None:
         post_title=""
-    send_email (post_title.replace("\n", "\\n"), site_type+"-"+user, DATE, MAIL_RCPT, text_part, html_part)
+    send_email (post_title.replace("\n", "\\n"), site_type+"-"+user, DATE, config["MAIL_RCPT"], text_part, html_part)
     if VERBOSITY_LEVEL > 0:
         print post_URL+" - sent"
 
-def calc_fname_in_base (site_type, user, _id):
-    m = hashlib.md5()
-    m.update(_id)
-    hh=binascii.hexlify(m.digest())
-
-    return site_type+"/"+user+"/"+hh[0]+"/"+hh[1]+"/"+hh[2:]
-
 def is_id_in_base (site_type, user, _id):
-    return os.path.exists(calc_fname_in_base (site_type, user, _id))
+    if site_type not in base:
+        return False
+    if user not in base[site_type]:
+        return False
+    if _id not in base[site_type][user]:
+        return False
+    return True
 
 def add_id_to_base (site_type, user, _id):
-    fname=calc_fname_in_base (site_type, user, _id)
-    filepath=os.path.dirname(fname)
-
-    if os.path.exists (filepath)==0:
-        os.makedirs (filepath)    
-    
-    f=open (fname, "w+")
-    #f.write ("sent")
-    f.close()
+    if site_type not in base:
+        base[site_type]={}
+    if user not in base[site_type]:
+        base[site_type][user]={}
+    if _id in base[site_type][user]:
+        return
+    base[site_type][user][_id]=True
 
 def process_post (site_type, user, post_date, post_title, post_summary, post_URL, post_id):
     if is_id_in_base(site_type, user, post_id):
@@ -93,8 +79,6 @@ def process_post (site_type, user, post_date, post_title, post_summary, post_URL
 def fetch (site_type, user, RSS_URL=None):
     d=None
 
-    if site_type=='twitter':
-        d = feedparser.parse("https://api.twitter.com/1/statuses/user_timeline.rss?screen_name="+user)
     if site_type=='livejournal':
         d = feedparser.parse("http://"+user+".livejournal.com/data/rss")
     if site_type=='ljr':
@@ -143,6 +127,31 @@ def fetch (site_type, user, RSS_URL=None):
                 post_id=e['link'] # use link instead of id (hacker news feed)
         process_post (site_type, user, post_date, post_title, post_body, e['link'], post_id)
 
-fetch ("livejournal", "dennis")
-fetch ("twitter", "yurichev")
-fetch ("rss", "blog_yurichev", "http://blog.yurichev.com/rss.xml")
+config_json=open("config.json").read()
+config=json.loads(config_json)
+#print config_data
+
+LOGIN = config["FROMADDR"]
+
+try:
+    pkl_file = open('base.pkl', 'rb')
+    base = pickle.load(pkl_file)
+    pkl_file.close()
+except IOError:
+    # no file created yet
+    pass
+
+feeds_json=open("feeds.json").read()
+feeds_data=json.loads(feeds_json)
+#print feeds_data
+
+for LJ in feeds_data["livejournal"]:
+    fetch ("livejournal", LJ)
+for tmp in feeds_data["rss"]:
+    rss_url = tmp["url"]
+    rss_name = tmp["name"]
+    fetch ("rss", rss_name, rss_url)
+
+output = open('base.pkl', 'wb')
+pickle.dump(base, output)
+output.close()

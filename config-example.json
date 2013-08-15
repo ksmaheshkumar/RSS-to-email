@@ -1,0 +1,8 @@
+{
+	"LOCAL_MAILSERVER":true,
+	"MAILSERVER_TLS":false,
+	"FROMADDR":"from@address",
+	"PASSWORD":"",
+	"SMTP_HOST":"smtp.host",
+	"MAIL_RCPT":"mail@to"
+}

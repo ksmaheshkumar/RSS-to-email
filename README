@@ -1,8 +1,10 @@
-Simplest possible RSS to email gate
+Simplest possible RSS to email gate.
 
-Set up FROMADDR, PASSWORD, SMTP_HOST, MAIL_RCPT values.
-And also set your feeds in the end of fetch.py file.
+Set up FROMADDR, PASSWORD, SMTP_HOST, MAIL_RCPT values in config.json file (file format is, 
+obviously, JSON).
+And also set your feeds in the end of feeds.json file.
 
-Note: information about posts we received is stored in plain files. No database support.
+Note: information about posts we received is stored in base.pkl file (Pickle Python serialization).
+No database support.
 
 -- dennis(a)yurichev.com
