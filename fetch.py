@@ -116,7 +116,10 @@ def fetch (site_type, user, RSS_URL=None):
         if 'content' in e: # have full post content?
             post_body=e['content'][0]['value']
         else:
-            post_body=e['summary']
+            if 'summary' in e:
+                post_body=e['summary']
+            else:
+                post_body='can\'t get body of post'
 
         if 'id' in e:
             post_id=e['id']
@@ -145,12 +148,15 @@ feeds_json=open("feeds.json").read()
 feeds_data=json.loads(feeds_json)
 #print feeds_data
 
-for LJ in feeds_data["livejournal"]:
-    fetch ("livejournal", LJ)
-for tmp in feeds_data["rss"]:
-    rss_url = tmp["url"]
-    rss_name = tmp["name"]
-    fetch ("rss", rss_name, rss_url)
+try:
+    for LJ in feeds_data["livejournal"]:
+        fetch ("livejournal", LJ)
+    for tmp in feeds_data["rss"]:
+        rss_url = tmp["url"]
+        rss_name = tmp["name"]
+        fetch ("rss", rss_name, rss_url)
+except IOError:
+    pass
 
 output = open('base.pkl', 'wb')
 pickle.dump(base, output)
