@@ -6,7 +6,7 @@ import xmlrpclib, smtplib, json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-VERBOSITY_LEVEL=0
+VERBOSITY_LEVEL=0 # FIXME: option
 
 base={}
 
@@ -151,6 +151,8 @@ feeds_data=json.loads(feeds_json)
 try:
     for LJ in feeds_data["livejournal"]:
         fetch ("livejournal", LJ)
+    for ljr in feeds_data["ljr"]:
+        fetch ("ljr", ljr)
     for tmp in feeds_data["rss"]:
         rss_url = tmp["url"]
         rss_name = tmp["name"]
