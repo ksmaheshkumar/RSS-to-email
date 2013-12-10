@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# python 2.6
+
 import sys, email, os, pickle, binascii, hashlib, time, feedparser, re, random, datetime
 import xmlrpclib, smtplib, json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
-VERBOSITY_LEVEL=0 # FIXME: option
 
 base={}
 
@@ -50,7 +50,7 @@ def email_post (site_type, user, post_date, post_title, post_summary, post_URL):
         post_title=""
     send_email (post_title.replace("\n", "\\n"), site_type+"-"+user, DATE, config["MAIL_RCPT"], text_part, html_part)
     if VERBOSITY_LEVEL > 0:
-        print post_URL+" - sent"
+        print (post_URL+" - sent")
 
 def is_id_in_base (site_type, user, _id):
     if site_type not in base:
@@ -87,19 +87,19 @@ def fetch (site_type, user, RSS_URL=None):
         d = feedparser.parse(RSS_URL)
 
     if d==None:
-        print "unknown site_type="+site_type
+        print ("unknown site_type="+site_type)
         return
 
     if len(d.entries)==0:
         if VERBOSITY_LEVEL>0:
-            print user+": no entries"
+            print (user+": no entries")
         return
     if VERBOSITY_LEVEL>0:
         print (site_type+":"+user+": got %d entries" % len(d.entries))
     for e in d.entries:
         if VERBOSITY_LEVEL>1:
             for i in e:
-                print "["+i+"]", e[i]
+                print ("["+i+"]", e[i])
         if 'published_parsed' in e:
             post_date=e['published_parsed'] # time.struct_time, UTC/GMT time
         else: 
@@ -129,6 +129,10 @@ def fetch (site_type, user, RSS_URL=None):
             else:
                 post_id=e['link'] # use link instead of id (hacker news feed)
         process_post (site_type, user, post_date, post_title, post_body, e['link'], post_id)
+
+VERBOSITY_LEVEL=0
+if len(sys.argv)>1 and sys.argv[1]=="-v":
+	VERBOSITY_LEVEL=1
 
 config_json=open("config.json").read()
 config=json.loads(config_json)
@@ -163,3 +167,4 @@ except IOError:
 output = open('base.pkl', 'wb')
 pickle.dump(base, output)
 output.close()
+

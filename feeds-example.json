@@ -5,7 +5,6 @@
 		],
 	"rss":[
 		{ "name":"blog_yurichev", "url":"http://blog.yurichev.com/rss.xml" },
-		{ "name":"NP-en", "url":"http://en.nuclear-plant.org/rss.xml" },
-		{ "name":"NP-ru", "url":"http://ru.nuclear-plant.org/rss.xml" }
+		{ "name":"LtU", "url":"http://lambda-the-ultimate.org/rss.xml" }
 		]
 }
